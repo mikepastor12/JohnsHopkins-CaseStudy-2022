@@ -1,5 +1,5 @@
 ---
-title: "JohnsHopkinsMachineLearning-CaseStudy"
+title: "Johns Hopkins - Applied Machine Learning - Case Study"
 knit: (function(input_file, encoding) {out_dir <- 'docs'; rmarkdown::render(input_file,encoding=encoding,output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
 author: "Mike Pastor"
 date: "1/7/2022"
@@ -23,13 +23,13 @@ library( forecast )   # forecasting data
 
 ```
 
-## R Markdown
+##   Assignment Background
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset). 
 
-JohnsHopkinsMachineLearning-CaseStudy   
 
-```{r}
+```{r, include=FALSE}
 
-print( "hello world...Yet again  and again.  ............ ")
+print( "hello world...")
 
 #================================================
 # Open the data files
@@ -52,14 +52,8 @@ print( "PML Data Files have been Loaded  ")
  
 ```
 
-
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r pmlTraining}
+summary(pmlTraining)
 ```
 
 ## Including Plots
