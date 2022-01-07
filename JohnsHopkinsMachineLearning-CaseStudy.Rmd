@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(AppliedPredictiveModeling)
 library(caret)
 
-library(ElemStatLearn)    
+library(ElemStatLearn)      
 library(rpart)
 library(randomForest)
 library(gbm)    # Boosting
