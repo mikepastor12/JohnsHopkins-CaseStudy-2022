@@ -1,7 +1,8 @@
 ---
 title: "JohnsHopkinsMachineLearning-CaseStudy"
+knit: (function(input_file, encoding) {out_dir <- 'docs'; rmarkdown::render(input_file,encoding=encoding,output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
 author: "Mike Pastor"
-date: "1/6/2022"
+date: "1/7/2022"
 output: html_document
 ---
 
