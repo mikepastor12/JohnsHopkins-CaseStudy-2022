@@ -1,8 +1,8 @@
 ---
-title: "Johns Hopkins - Applied Machine Learning - Case Study"
+title: "Practical Machine Learning - Case Study"
 knit: (function(input_file, encoding) {out_dir <- 'docs'; rmarkdown::render(input_file,encoding=encoding,output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
 author: "Mike Pastor"
-date: "1/7/2022"
+date: "1/11/2022"
 output: html_document
 ---
 
@@ -22,12 +22,20 @@ library( quantmod )   # forecasting data
 library( forecast )   # forecasting data
 
 ```
+##   Just how good was that workout?
+
+As part of the excellent Applied Machine Learning course at Johns Hopkins University, we are examining the quality of physical workouts.  
+
+The UCI Machine Learning Repository ( [See them here](https://archive.ics.uci.edu/ml/datasets/Wearable+Computing%3A+Classification+of+Body+Postures+and+Movements+(PUC-Rio) ) ) has provided a significant dataset which includes physical measurements from workouts.  Their "Wearable Computing" measurements are invaluable for this field of research. 
 
 ##   Assignment Background
 Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset). 
 
 
-```{r, include=FALSE}
+
+
+
+```{r, include=FALSE, echo=FALSE}
 
 print( "hello world...")
 
@@ -53,7 +61,7 @@ print( "PML Data Files have been Loaded  ")
 ```
 
 ```{r pmlTraining}
-summary(pmlTraining)
+# summary(pmlTraining)
 ```
 
 ## Including Plots
@@ -61,7 +69,7 @@ summary(pmlTraining)
 You can also embed plots, for example:
 
 ```{r pressure, echo=FALSE}
-plot(pressure)
+# plot(pressure)
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
