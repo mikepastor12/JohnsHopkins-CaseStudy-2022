@@ -6,40 +6,46 @@ date: "1/11/2022"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, echo=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
+#====================================================================
+#  Load the Packages
+#
+library(caret)
+library(dplyr)
+library(ggplot2)
 
 library(AppliedPredictiveModeling)
-library(caret)
-
-library(ElemStatLearn)      
-library(rpart)
-library(randomForest)
-library(gbm)    # Boosting
+library(ElemStatLearn)
+library(rpart)        # Recursive partition trees
+library(randomForest) # Random forest
+library(gbm)          # Boosting
 
 library( quantmod )   # forecasting data
-library( forecast )   # forecasting data
+library( forecast )   # timeseries forecasting data
 
 ```
 ##   Just how good was that workout?
 
 As part of the excellent Applied Machine Learning course at Johns Hopkins University, we are examining the quality of physical workouts.  
 
-The UCI Machine Learning Repository ( [See them here](https://archive.ics.uci.edu/ml/datasets/Wearable+Computing%3A+Classification+of+Body+Postures+and+Movements+(PUC-Rio) ) ) has provided a significant dataset which includes physical measurements from workouts.  Their "Wearable Computing" measurements are invaluable for this field of research. 
+The UCI Machine Learning Repository ( [See them here](https://archive.ics.uci.edu/ml/datasets/Wearable+Computing%3A+Classification+of+Body+Postures+and+Movements+(PUC-Rio) ) ) has generously provided a significant dataset which includes physical measurements from workouts.  Their "Wearable Computing" measurements are invaluable for this field of research. 
 
 ##   Assignment Background
-Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset). 
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. 
 
 
+##   Goals & Deliverables
 
+Our goal is to predict the manner in which they did the exercise.  This is the **"classe"** variable in the pml-training dataset. It has values from character 'A' through 'E' and we will transform this into a five level Factor.
+
+Let's take a closer look at "classe" which is our Dependent/Response/Y variable...
 
 
 ```{r, include=FALSE, echo=FALSE}
 
-print( "hello world...")
-
-#================================================
+#==================================================================
 # Open the data files
 # 
 DATASETPATH <- "./"
@@ -57,19 +63,28 @@ nrow( pmlTesting  )
 
 print( "PML Data Files have been Loaded  ")
 
+#==================================================================
+#  Cleanse the data
+#
+pmlTraining$classe  <- as.factor(pmlTraining$classe)
+
+
+
  
 ```
 
-```{r pmlTraining}
-# summary(pmlTraining)
+```{r fig.align='center', fig.height=3, fig.width=4 }
+
+summary( pmlTraining$classe )
+plot( pmlTraining$classe )
+
 ```
 
-## Including Plots
+## Which predictor variables should we use?
 
-You can also embed plots, for example:
+Let's take a closer look at our Indepenedent/Explanatory/X variables....
 
 ```{r pressure, echo=FALSE}
 # plot(pressure)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
