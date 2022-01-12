@@ -44,6 +44,8 @@ Our goal is to predict the manner in which they did the exercise.  This is the *
 Please see the R Markdown source code and supporting files at our Git Site ( [Here in GitHub]( https://github.com/mikepastor12/JohnsHopkins-CaseStudy-2022)  )
 
 
+##   Our Response Variable
+
 Let's take a closer look at "classe" which is our Dependent/Response/Y variable...
 
 
