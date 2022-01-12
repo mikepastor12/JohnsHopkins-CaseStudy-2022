@@ -185,9 +185,18 @@ pre code {
 <p>Our goal is to predict the manner in which they did the exercise. This is the <strong>“classe”</strong> variable in the pml-training dataset. It has values from character ‘A’ through ‘E’ to denote the quality of the workout. We will transform this into a five level Factor for our models.</p>
 <p>Please see the R Markdown source code and supporting files at our Git Site ( <a href="https://github.com/mikepastor12/JohnsHopkins-CaseStudy-2022">Here in GitHub</a> )</p>
 </div>
+<div id="performance-metrics" class="section level2">
+<h2>Performance Metrics</h2>
+<p>Let’s open the datasets and create pseudo training/testing datasets that we can use to estimate the “out-of-sample” error on models. The pml-training dataset is partitioned into thirds. We then compare the predicted values to the pseudo testing dataset to get our categorical Accuracy performance metric.</p>
+<pre><code>## [1] 19622</code></pre>
+<pre><code>## [1] 20</code></pre>
+<pre><code>## [1] &quot;PML Data Files have been Loaded&quot;</code></pre>
+<pre><code>## [1] &quot;Dataset has been partitioned&quot;</code></pre>
+</div>
 <div id="our-response-variable" class="section level2">
 <h2>Our Response Variable</h2>
-<p>Let’s take a closer look at “classe” which is our Dependent/Response/Y variable…</p>
+<p>Let’s take a closer look at “classe” which is our Dependent/Response/Y variable.</p>
+<p>Setup “classe”, “new_window” and “user_name” as Factors.</p>
 <pre class="r"><code>summary( training$classe )</code></pre>
 <pre><code>##    A    B    C    D    E 
 ## 3739 2544 2293 2155 2417</code></pre>
@@ -202,54 +211,48 @@ pre code {
 <p>The trained LASSO Model now can give us the relevant fields.</p>
 <p>Let’s take the predictors with an Overall impact greater than 7. Exclude the timestamps and outliers.</p>
 <p>Here are our candidates!</p>
-<pre><code>##                      A        B        C         D         E
-## max_yaw_arm          0 6.594886  0.00000  0.000000  0.000000
-## stddev_pitch_belt    0 0.000000  0.00000  0.000000  6.640307
-## amplitude_pitch_belt 0 0.000000  0.00000  0.000000  7.173094
-## var_accel_forearm    0 7.203413  0.00000  0.000000  0.000000
-## var_roll_belt        0 0.000000  0.00000  8.354001  0.000000
-## accel_dumbbell_y     0 8.787143  0.00000  0.000000  0.000000
-## num_window           0 0.000000  0.00000  0.000000 10.970227
-## avg_roll_dumbbell    0 0.000000 16.50243 14.764602  0.000000
-## min_roll_forearm     0 0.000000  0.00000 31.964635  0.000000
-##                                   varName OverallImp
-## max_yaw_arm                   max_yaw_arm   6.594886
-## stddev_pitch_belt       stddev_pitch_belt   6.640307
-## amplitude_pitch_belt amplitude_pitch_belt   7.173094
-## var_accel_forearm       var_accel_forearm   7.203413
-## var_roll_belt               var_roll_belt   8.354001
-## accel_dumbbell_y         accel_dumbbell_y   8.787143
-## num_window                     num_window  10.970227
-## avg_roll_dumbbell       avg_roll_dumbbell  31.267037
-## min_roll_forearm         min_roll_forearm  31.964635</code></pre>
+<pre><code>##                   A        B         C        D        E           varName
+## stddev_yaw_arm    0 6.747488  0.000000  0.00000 0.000000    stddev_yaw_arm
+## max_roll_dumbbell 0 0.000000  7.069278  0.00000 0.000000 max_roll_dumbbell
+## stddev_roll_belt  0 0.000000  0.000000  0.00000 7.433372  stddev_roll_belt
+## var_roll_forearm  0 0.000000  0.000000 11.75977 0.000000  var_roll_forearm
+## avg_roll_dumbbell 0 0.000000 12.360090  0.00000 0.000000 avg_roll_dumbbell
+## min_roll_forearm  0 0.000000  0.000000 27.37943 0.000000  min_roll_forearm
+##                   OverallImp
+## stddev_yaw_arm      6.747488
+## max_roll_dumbbell   7.069278
+## stddev_roll_belt    7.433372
+## var_roll_forearm   11.759768
+## avg_roll_dumbbell  12.360090
+## min_roll_forearm   27.379433</code></pre>
 <p>Let’s use these predictor columns to build a Random Forest on the dataset and test our prediction accuracy…</p>
 <pre><code>## Random Forest 
 ## 
 ## 13148 samples
-##     9 predictor
+##     6 predictor
 ##     5 classes: &#39;A&#39;, &#39;B&#39;, &#39;C&#39;, &#39;D&#39;, &#39;E&#39; 
 ## 
 ## No pre-processing
 ## Resampling: Bootstrapped (25 reps) 
-## Summary of sample sizes: 249, 249, 249, 249, 249, 249, ... 
+## Summary of sample sizes: 258, 258, 258, 258, 258, 258, ... 
 ## Resampling results across tuning parameters:
 ## 
 ##   mtry  Accuracy   Kappa    
-##   2     0.7100831  0.6333962
-##   5     0.6992087  0.6196908
-##   9     0.6819833  0.5980819
+##   2     0.6575603  0.5610965
+##   4     0.6495880  0.5516613
+##   6     0.6403535  0.5406114
 ## 
 ## Accuracy was used to select the optimal model using the largest value.
 ## The final value used for the model was mtry = 2.</code></pre>
 <pre><code>## [1] &quot;Our Out-Of-Sample Accuracy Crosstab below&quot;</code></pre>
 <pre><code>##      
 ## pred2  A
-##     A 53
-##     B 29
-##     C 25
-##     D 24
+##     A 43
+##     B 34
+##     C 27
+##     D 18
 ##     E 26</code></pre>
-<pre><code>## [1] &quot;Our Out-Of-Sample Accuracy rate is --&gt;    0.3376&quot;</code></pre>
+<pre><code>## [1] &quot;Our Out-Of-Sample Accuracy rate is --&gt;    0.2905&quot;</code></pre>
 </div>
 
 

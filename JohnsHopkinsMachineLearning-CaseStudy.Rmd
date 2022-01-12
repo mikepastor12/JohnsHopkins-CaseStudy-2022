@@ -9,6 +9,8 @@ output: html_document
 ```{r setup, include=FALSE, echo=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
+rm( list = ls() )    # Clear Environment objects
+
 #====================================================================
 #  Load the Packages
 #
@@ -22,9 +24,6 @@ library(ElemStatLearn)
 library(rpart)        # Recursive partition trees
 library(randomForest) # Random forest
 library(gbm)          # Boosting
-
-library( quantmod )   # forecasting data
-library( forecast )   # timeseries forecasting data
 
 ```
 ##   Just how good was that workout?
@@ -43,20 +42,17 @@ Our goal is to predict the manner in which they did the exercise.  This is the *
 
 Please see the R Markdown source code and supporting files at our Git Site ( [Here in GitHub]( https://github.com/mikepastor12/JohnsHopkins-CaseStudy-2022)  )
 
+##   Performance Metrics
 
-##   Our Response Variable
-
-Let's take a closer look at "classe" which is our Dependent/Response/Y variable...
+Let's open the datasets and create pseudo training/testing datasets that we can use to estimate the "out-of-sample" error on models.  The pml-training dataset is partitioned into thirds.   We then compare the predicted values to the pseudo testing dataset to get our categorical Accuracy performance metric.
 
 
-```{r, include=FALSE, echo=FALSE}
-
-rm( list = ls() )    # Clear Environment objects
+```{r   echo=FALSE}
 
 # Open the data files
 # 
 DATASETPATH <- "./"
-list.files(path = DATASETPATH)
+# list.files(path = DATASETPATH)
 
 myFilename <- paste( DATASETPATH, "pml-training.csv", sep="" )
 pml_training <- read.csv(myFilename)
@@ -66,7 +62,7 @@ myFilename <- paste( DATASETPATH, "pml-testing.csv", sep="" )
 pml_testing <- read.csv(myFilename)
 nrow( pml_testing )
 
-print( "PML Data Files have been Loaded  ")
+print( "PML Data Files have been Loaded")
 
 
 #========================================================================
@@ -79,7 +75,18 @@ inTrain = createDataPartition(pml_training$classe, p =0.67, list=FALSE )
 training = pml_training[inTrain,]
 testing = pml_training[-inTrain,]
 
-print( "Datset has been partitioned  ")
+print( "Dataset has been partitioned")
+```
+
+##   Our Response Variable
+
+Let's take a closer look at "classe" which is our Dependent/Response/Y variable.
+
+Setup "classe", "new_window" and "user_name" as Factors.
+
+
+```{r, include=FALSE, echo=FALSE}
+
 #==================================================================
 #  Cleanse the data
 #
