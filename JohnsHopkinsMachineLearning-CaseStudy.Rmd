@@ -47,7 +47,7 @@ Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible t
 
 Our goal is to predict the manner in which they did the exercise.  This is the **"classe"** variable in the pml-training dataset. It has values from character 'A' through 'E' to denote the quality of the workout.  We will transform this into a five level Factor for our models.
 
-Please see the R Markdown source code and supporting files at our Git Site ( [Here in GitHub]( https://github.com/mikepastor12/JohnsHopkins-CaseStudy-2022)  )
+Please see the **R Markdown source code** and supporting files at our Git Site ( [Here in GitHub]( https://github.com/mikepastor12/JohnsHopkins-CaseStudy-2022)  )
 
 ##   Performance Metrics
 
@@ -115,9 +115,11 @@ print( "*  Datasets have been loaded, cleaned and partitioned")
 
 ##   Our Dependent Response Variable
 
-Let's take a closer look at "classe" which is our Dependent/Response/Y variable.
+
+Let's take a closer look at **"classe"** which is our Dependent / Response / Y variable that we will predict in our models.
 
 - Categorical
+- Ordinal
 - Manner in which they did the exercise
 
 It has values from character 'A' through 'E' to denote the quality of the workout.  We will transform this into a five level Factor for our model development.
@@ -130,7 +132,7 @@ plot( training$classe )
 
 ```
 
-## Which predictor variables should we use?
+## Which Explanatory Predictor variables should we use?
 
 Let's take a closer look at our Independent/Explanatory/X variables by fitting a Regularized Regression **(LASSO)** model.  This will give us guidance on the most valuable predictor variables in the dataset. The trained LASSO Model can give us the fields/columns which explain most of the variance.
 
@@ -168,13 +170,14 @@ date()
 
 ```{r echo=FALSE}
 #  print( myLASSO )
+
 print( "LASSO Model Created")
 ```
 
 
 Let's take the predictor variables with an Overall impact greater than 7.
 
-Here are our candidates in a Model Formula string...  
+Here are our candidates in a constructed Model Formula string...  
 
 ```{r echo=FALSE }
 
@@ -275,8 +278,7 @@ myRF <-  train( classe ~  stddev_roll_forearm +
                   var_roll_belt + var_accel_dumbbell +
                   avg_roll_dumbbell + min_roll_forearm,
                   data=cleanTrainingDF, method="rf" )
-
-
+myRF
 ```
 
 ```{r echo=FALSE}
@@ -324,6 +326,7 @@ Now let's fit a Boosting Model and see if we do any better...
 #  Let's try the General Boosting Model 
 #
 
+
 myGBM <-  train( classe ~  stddev_roll_forearm +
                    var_roll_belt + var_accel_dumbbell +
                    avg_roll_dumbbell + min_roll_forearm,
@@ -346,6 +349,7 @@ print( paste( "Our estimated Out-Of-Sample Accuracy rate for GBM BOOSTING is -->
               round( accuracyRate, 4)  ) )
 
 ```
+
 ```{r echo=FALSE}
 
 print( paste( "Our estimated Out-Of-Sample Accuracy rate for GBM BOOSTING is -->   ",
@@ -358,6 +362,8 @@ Unfortunately, Boosting did worse than Random Forest...
 Now let's try a stacked model that combines the Random Forest and Boosting...
 
 ```{r  echo=FALSE}
+
+
 # 
 # #=========================================  Stacking ================
 # #  Now determine the Stacked accuracy....
@@ -378,11 +384,39 @@ Now let's try a stacked model that combines the Random Forest and Boosting...
 
 We can achieve a basic prediction level on this problem, but more data and research is needed.
 
-We will use the Random Forest Model for our exam predictions.
+Let's get a **Baseline** by predicting "classe" **randomly** and checking the Accuracy...
+
+```{r echo=FALSE}
+
+#===================================================================
+#  Random sample
+# 
+#  Let's get a baseline with just randomly generated predictions.
+#
+
+myFactorVars <- c( "A", "B", "C", "D", "E" )
+sampleSize <- nrow(  cleanTestingDF )
+
+predRandom <- sample( myFactorVars, size=sampleSize, replace = TRUE )
+
+# Mark our correct predictions
+cleanTestingDF$predictedRightRandom<- predRandom == cleanTestingDF$classe
+
+#  Accuracy percentage 
+accuracyRate <- nrow( cleanTestingDF[ which( cleanTestingDF$predictedRightRandom ==TRUE ), ] ) /
+  nrow( cleanTestingDF )
+
+print( paste( "RANDOM SAMPLE - Out-Of-Sample Accuracy rate is -->   ",
+              round( accuracyRate, 4)  ) )
+```
+
+The random sample is about equal to the GBM-Boosting model at ~ 20%.
+
+We will use the **Random Forest Model for our exam predictions** because it has a better accuracy at ~ 39% 
 
 Here our our predictions for the 20 questions on the pml-testing dataset -
 
-```{r }
+```{r finalSummary}
 
 #=========================================================================
 #  Predict on pml-testing dataset - 20 predictions of classes
@@ -390,18 +424,18 @@ Here our our predictions for the 20 questions on the pml-testing dataset -
 #        Use the best model for Prediction 
 
 
-#  myPredictions <- predict( myRF, newdata=pml_testing )
-#  myPredictions
+myPredictions <- predict( myRF, newdata=pml_testing )
+myPredictions
 
 
 ```
 
-Thank for reviewing our analysis! 
+**Thank you** for reviewing our analysis! 
 
 Please see the R Markdown source code and supporting files at our Git Site ( [Here in GitHub]( https://github.com/mikepastor12/JohnsHopkins-CaseStudy-2022)  )
 
 
-Michael Louis Pastor - 2022
+**Michael Louis Pastor - 2022**
 
 
 
