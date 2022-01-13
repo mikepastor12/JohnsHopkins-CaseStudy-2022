@@ -316,7 +316,7 @@ print( paste( "Our estimated Out-Of-Sample Accuracy rate for RANDOM FOREST is --
 
 Now let's fit a Boosting Model and see if we do any better...
 
-```{r echo=FALSE}
+```{r include=FALSE, echo=FALSE}
 
 #===================================================================
 #  Boosting
@@ -341,6 +341,12 @@ cleanTestingDF$predictedRight3 <- pred3 == cleanTestingDF$classe
 #  Accuracy percentage 
 accuracyRate <- nrow( cleanTestingDF[ which( cleanTestingDF$predictedRight3 ==TRUE ), ] ) /
   nrow( cleanTestingDF )
+
+print( paste( "Our estimated Out-Of-Sample Accuracy rate for GBM BOOSTING is -->   ",
+              round( accuracyRate, 4)  ) )
+
+```
+```{r echo=FALSE}
 
 print( paste( "Our estimated Out-Of-Sample Accuracy rate for GBM BOOSTING is -->   ",
               round( accuracyRate, 4)  ) )
@@ -372,7 +378,9 @@ Now let's try a stacked model that combines the Random Forest and Boosting...
 
 We can achieve a basic prediction level on this problem, but more data and research is needed.
 
-Using our Model, here our our predictions for the 20 questions on the test site -
+We will use the Random Forest Model for our exam predictions.
+
+Here our our predictions for the 20 questions on the pml-testing dataset -
 
 ```{r }
 
@@ -381,7 +389,9 @@ Using our Model, here our our predictions for the 20 questions on the test site 
 #
 #        Use the best model for Prediction 
 
-#  myPredictions <- predict( myGBM, newdata=pml_testing )
+
+#  myPredictions <- predict( myRF, newdata=pml_testing )
+#  myPredictions
 
 
 ```

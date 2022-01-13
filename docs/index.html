@@ -211,12 +211,12 @@ pre code {
 <p>Let’s take a closer look at our Independent/Explanatory/X variables by fitting a Regularized Regression <strong>(LASSO)</strong> model. This will give us guidance on the most valuable predictor variables in the dataset. The trained LASSO Model can give us the fields/columns which explain most of the variance.</p>
 <p>First, we need some more data cleaning - <em>smiles</em> - Twelve of the columns in the Training dataset contain division by zero errors - let’s remove these clear errors from the datasets. - Let’s also run <strong>preProcess()</strong> on the train() to center and scale the variables. This will help us find the data relationships.</p>
 <p>Now let’s LASSO some important predictor variables…</p>
-<p>print( myLASSO )</p>
+<pre><code>## [1] &quot;LASSO Model Created&quot;</code></pre>
 <p>Let’s take the predictor variables with an Overall impact greater than 7.</p>
 <p>Here are our candidates in a Model Formula string…</p>
 <pre><code>## classe ~ stddev_roll_forearm + var_roll_belt + num_window + var_accel_dumbbell + 
 ##     avg_roll_dumbbell + min_roll_forearm
-## &lt;environment: 0x0000000014d48ce8&gt;</code></pre>
+## &lt;environment: 0x0000000014d48e00&gt;</code></pre>
 <p>The <strong>num_window</strong> variable is causing a Bias problem - It appears to be causing the model to be overfitted with exact prediction. This variable may be an administrative field and would not do well in future Out-of-Sample tests. Let’s remove num_window variable from our Model Formula.</p>
 <p>And of course, some more data cleaning - <em>smiles</em> -</p>
 <ul>
@@ -227,20 +227,28 @@ pre code {
 <p>Now let’s compute our <strong>estimated</strong> Out-Of-Sample Accuracy for this model…</p>
 <pre><code>## [1] &quot;Our estimated Out-Of-Sample Accuracy rate for RANDOM FOREST is --&gt;    0.293&quot;</code></pre>
 <p>Now let’s fit a Boosting Model and see if we do any better…</p>
+<pre><code>## [1] &quot;Our estimated Out-Of-Sample Accuracy rate for GBM BOOSTING is --&gt;    0.1855&quot;</code></pre>
 <p>Unfortunately, Boosting did worse than Random Forest…</p>
 <p>Now let’s try a stacked model that combines the Random Forest and Boosting…</p>
 </div>
 <div id="summary" class="section level2">
 <h2>Summary</h2>
-<p>We can achieve a basic prediction level on this problem, but more data and research is need.</p>
-<p>Using our Model, here our our predictions for the 20 questions on the test site -</p>
+<p>We can achieve a basic prediction level on this problem, but more data and research is needed.</p>
+<p>We will use the Random Forest Model for our exam predictions.</p>
+<p>Here our our predictions for the 20 questions on the pml-testing dataset -</p>
 <pre class="r"><code>#=========================================================================
-#  Predict on pml-testing  20 sets
-# Prediction 
+#  Predict on pml-testing dataset - 20 predictions of classes
+#
+#        Use the best model for Prediction 
 
-#  myPredictions &lt;- predict( myRF, newdata=pml_testing )</code></pre>
+
+myPredictions &lt;- predict( myRF, newdata=pml_testing )
+myPredictions</code></pre>
+<pre><code>##  [1] A A A A A A A A A A A A A A A A A A A A
+## Levels: A B C D E</code></pre>
 <p>Thank for reviewing our analysis!</p>
 <p>Please see the R Markdown source code and supporting files at our Git Site ( <a href="https://github.com/mikepastor12/JohnsHopkins-CaseStudy-2022">Here in GitHub</a> )</p>
+<p>Michael Louis Pastor - 2022</p>
 </div>
 
 
