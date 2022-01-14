@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ---
 title: "Practical Machine Learning - Case Study"
 knit: (function(input_file, encoding) {out_dir <- 'docs'; rmarkdown::render(input_file,encoding=encoding,output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
@@ -483,3 +484,456 @@ Please see the R Markdown source code and supporting files at our Git Site ( [He
 
 
 
+=======
+---
+title: "Practical Machine Learning - Case Study"
+knit: (function(input_file, encoding) {out_dir <- 'docs'; rmarkdown::render(input_file,encoding=encoding,output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
+author: "Michael Louis Pastor"
+date: "1/14/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+rm( list = ls() )    # Clear Environment objects
+
+#====================================================================
+#  Load the Packages
+#
+
+library(caret)
+library(dplyr)
+library(ggplot2)
+library(stringr)
+library( lubridate )
+library( crosstable )
+
+library(AppliedPredictiveModeling)
+library(ElemStatLearn)
+library(rpart)        # Recursive partition trees
+library(randomForest) # Random forest
+library(gbm)          # Boosting
+
+set.seed( 123456 )    # Reproducibility
+
+#  library(emo)
+
+```
+##   Just how good was that workout?
+
+As part of the excellent Applied Machine Learning course at Johns Hopkins University, we are examining the quality of physical workouts.  
+
+The UCI Machine Learning Repository ( [See them here](https://archive.ics.uci.edu/ml/datasets/Wearable+Computing%3A+Classification+of+Body+Postures+and+Movements+(PUC-Rio) ) ) has generously provided a significant dataset which includes physical measurements from workouts.  Their "Wearable Computing" measurements are invaluable for this field of research. 
+
+##   Assignment Background
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. 
+
+
+##   Goals & Deliverables
+
+Our goal is to predict the manner in which they did the exercise.  This is the **"classe"** variable in the pml-training dataset. It has values from character 'A' through 'E' to denote the quality of the workout.  We will transform this into a five level Factor for our models.
+
+Please see the **R Markdown source code** and supporting files at our Git Site ( [Here in GitHub]( https://github.com/mikepastor12/JohnsHopkins-CaseStudy-2022)  )
+
+##   Performance Metrics
+
+We will perform all of our performance measurements using a simple categorical Accuracy measurement ( predicted versus actual divided by total trials ).
+
+We will use random subsampling for **Cross-Validation**. The pml-training dataset is partitioned ( createDataPartition ) into separate training and testing datasets (67/33) that we can use to **estimate** the "out-of-sample" error on models.
+
+Let's start by opening the datasets, cleaning up some of the Factors & Dates and creating the pseudo training/testing datasets...
+
+```{r   echo=FALSE}
+
+
+# Open the data files
+# 
+DATASETPATH <- "./"
+# list.files(path = DATASETPATH)
+
+myFilename <- paste( DATASETPATH, "pml-training.csv", sep="" )
+pml_training <- read.csv(myFilename, stringsAsFactors=FALSE)
+# nrow( pml_training )
+
+myFilename <- paste( DATASETPATH, "pml-testing.csv", sep="" )
+pml_testing <- read.csv(myFilename, stringsAsFactors=FALSE)
+# nrow( pml_testing )
+
+#  Clean up these Factors at the base level here
+#
+pml_training$classe  <- as.factor(pml_training$classe)
+
+pml_training$new_window  <- as.factor(pml_training$new_window)
+pml_training$user_name  <- as.factor(pml_training$user_name)
+pml_testing$new_window  <- as.factor(pml_testing$new_window)
+pml_testing$user_name  <- as.factor(pml_testing$user_name)
+
+# Make the cvtd_timestamp into a proper datetime
+#
+
+pml_training$cvtd_timestamp <- parse_date_time( pml_training$cvtd_timestamp,
+                 c("mdy HM", "dmY HM", "%m/%d/%Y %H:%M:%S %p") )
+pml_testing$cvtd_timestamp <- parse_date_time( pml_testing$cvtd_timestamp,
+                  c("mdy HM", "dmY HM", "%m/%d/%Y %H:%M:%S %p") )
+# str(pml_training$cvtd_timestamp )
+
+
+#========================================================================
+#    Cross-Validation
+#
+#     Create the 'training' and 'testing' datasets from the 
+#       'pml-training.csv' dataset.
+#     This allows to perform simulated 'out of sample' measurements
+#      to measure the progress of our model.
+#
+#   Random subsample of the pml-training.csv data
+#     Two thirds in training and one third in testing.
+#
+#
+inTrain = createDataPartition(pml_training$classe, p =0.67, list=FALSE )
+training = pml_training[inTrain,]
+testing = pml_training[-inTrain,]
+#  nrow( training ) ; nrow( testing )
+
+print( "*  Datasets have been loaded, cleaned and partitioned")
+
+```
+
+##   Our Dependent Response Variable
+
+
+Let's take a closer look at **"classe"** which is our Dependent / Response / Y variable that we will predict in our models.
+
+- Categorical
+- Ordinal
+- Manner in which they did the exercise
+
+It has values from character 'A' through 'E' to denote the quality of the workout.  We will transform this into a five level Factor for our model development.
+
+
+```{r fig.align='center', fig.height=3, fig.width=4 }
+
+summary( training$classe )
+plot( training$classe )
+
+```
+
+## Which Explanatory Predictor variables should we use?
+
+Let's take a closer look at our Independent/Explanatory/X variables by fitting a Regularized Regression **(LASSO)** model.  This will give us guidance on the most valuable predictor variables in the dataset. The trained LASSO Model can give us the fields/columns which explain most of the variance.
+
+First, we need some more data cleaning - *smiles* 
+- Twelve of the columns in the Training dataset contain division by zero errors - let's remove these clear errors from the datasets.
+- Let's also run **preProcess()** on the train() to center and scale the variables.  This will help us find the data relationships.
+
+Now let's LASSO some important predictor variables...
+
+
+```{r include=FALSE, echo=FALSE}
+
+#===========================================================================
+# These columns contain a Division by Zero error in the original dataset.
+#   Let's remove them for the model building exercises.
+#
+omitNA_columns <- c(-130,-127, -92, -89, -74, -73, -71, -70, -17, -16, -14, -13 )
+# 
+
+cleanTrainingDF <- training[, omitNA_columns]
+cleanTestingDF <- testing[, omitNA_columns]
+
+
+#  Use a LASSO - Regularized Regression model
+#
+myLASSO <-  train( classe ~ ., 
+                   data=cleanTrainingDF, 
+                   preProcess=c("center", "scale"),
+                   method="glmnet",
+                   na.action = na.exclude )
+date()
+
+
+```
+
+```{r echo=FALSE}
+#  print( myLASSO )
+
+print( "LASSO Model Created")
+```
+
+
+Let's take the predictor variables with an Overall impact (i.e. most variance explained) greater than 7.
+
+Here are our candidates in a constructed Model Formula string...  
+
+```{r echo=FALSE }
+
+# Coefficients  - move toward zero 
+myCoef <-  coef( myLASSO$finalModel, myLASSO$bestTune$lambda )
+
+# Use varImp to access the Cofficients and show us the best predictors
+#
+myVarList  <-  varImp( myLASSO )
+myDF <- as.data.frame( myVarList$importance )
+myDF$varName <- rownames( myDF )
+
+myDF$OverallImp <-  myDF$A + myDF$B + myDF$C + myDF$D + myDF$E 
+# Get the best Predictors and remove timestamps
+bestPredictorsDF <- myDF %>%
+  filter( OverallImp > 7 & OverallImp < 100 ) %>%
+  arrange(OverallImp) 
+
+# filter( ! str_detect( varName, '^cvtd_timestamp' ))  %>%
+
+# Create the composite Formula string 
+tmpStr <- paste(bestPredictorsDF$varName, collapse=" + " )
+formula_str <- paste( "classe ~ ", tmpStr)
+formula( formula_str )
+# formula_str
+
+
+```
+
+
+The **num_window** variable is causing a Bias problem - It appears to be causing the model to be overfitted with exact prediction.  This variable may be an administrative field and would not do well in future Out-of-Sample tests. Let's remove num_window variable from our Model Formula.
+
+And of course, some more data cleaning - *smiles* -
+
+- Set the **missing NA values** in our independent variables to the median.  Use the median to avoid having the center pulled by outliers.  
+
+Let's use these FIVE predictor columns to build a **Random Forest** on the dataset and estimate our prediction accuracy...
+
+
+```{r  include=FALSE, echo=FALSE}
+
+
+#==============================================================
+# Clear up the NA in our predictor variables
+#
+#   There are substantial NA counts - set them to the median for now
+cleanTrainingDF$stddev_roll_forearm[ is.na(cleanTrainingDF$stddev_roll_forearm)] <-
+  median(cleanTrainingDF$stddev_roll_forearm,na.rm=TRUE)
+cleanTestingDF$stddev_roll_forearm[ is.na(cleanTestingDF$stddev_roll_forearm)] <-
+  median(cleanTestingDF$stddev_roll_forearm,na.rm=TRUE)
+pml_testing$stddev_roll_forearm[ is.na(pml_testing$stddev_roll_forearm)] <-
+  median(cleanTrainingDF$stddev_roll_forearm,na.rm=TRUE)
+
+cleanTrainingDF$var_roll_belt[ is.na(cleanTrainingDF$var_roll_belt)] <-
+  median(cleanTrainingDF$var_roll_belt,na.rm=TRUE)
+cleanTestingDF$var_roll_belt[ is.na(cleanTestingDF$var_roll_belt)] <-
+  median(cleanTestingDF$var_roll_belt,na.rm=TRUE)
+pml_testing$var_roll_belt[ is.na(pml_testing$var_roll_belt)] <-
+  median(cleanTrainingDF$var_roll_belt,na.rm=TRUE)
+
+cleanTrainingDF$var_accel_dumbbell[ is.na(cleanTrainingDF$var_accel_dumbbell)] <-
+  median(cleanTrainingDF$var_accel_dumbbell,na.rm=TRUE)
+cleanTestingDF$var_accel_dumbbell[ is.na(cleanTestingDF$var_accel_dumbbell)] <-
+  median(cleanTestingDF$var_accel_dumbbell,na.rm=TRUE)
+pml_testing$var_accel_dumbbell[ is.na(pml_testing$var_accel_dumbbell)] <-
+  median(cleanTrainingDF$var_accel_dumbbell,na.rm=TRUE)
+
+cleanTrainingDF$avg_roll_dumbbell[ is.na(cleanTrainingDF$avg_roll_dumbbell)] <-
+  median(cleanTrainingDF$avg_roll_dumbbell,na.rm=TRUE)
+cleanTestingDF$avg_roll_dumbbell[ is.na(cleanTestingDF$avg_roll_dumbbell)] <-
+  median(cleanTestingDF$avg_roll_dumbbell,na.rm=TRUE)
+pml_testing$avg_roll_dumbbell[ is.na(pml_testing$avg_roll_dumbbell)] <-
+  median(cleanTrainingDF$avg_roll_dumbbell,na.rm=TRUE)
+
+cleanTrainingDF$min_roll_forearm[ is.na(cleanTrainingDF$min_roll_forearm)] <-
+  median(cleanTrainingDF$min_roll_forearm,na.rm=TRUE)
+cleanTestingDF$min_roll_forearm[ is.na(cleanTestingDF$min_roll_forearm)] <-
+  median(cleanTestingDF$min_roll_forearm,na.rm=TRUE)
+pml_testing$min_roll_forearm[ is.na(pml_testing$min_roll_forearm)] <-
+  median(cleanTrainingDF$min_roll_forearm,na.rm=TRUE)
+
+cleanTrainingDF$stddev_pitch_belt [ is.na(cleanTrainingDF$stddev_pitch_belt )] <-
+  median(cleanTrainingDF$stddev_pitch_belt ,na.rm=TRUE)
+cleanTestingDF$stddev_pitch_belt [ is.na(cleanTestingDF$stddev_pitch_belt )] <-
+  median(cleanTestingDF$stddev_pitch_belt ,na.rm=TRUE)
+pml_testing$stddev_pitch_belt [ is.na(pml_testing$stddev_pitch_belt )] <-
+  median(cleanTrainingDF$stddev_pitch_belt ,na.rm=TRUE)
+
+
+
+# Remove num_window variable from our Model Formula - It appears to be causing
+#    the model to be overfitted with exact prediction.   This variable may be
+#    an administrative field and would not do well in future out-of-sample tests.
+
+# #  Fit a Random forest 
+
+myRF <-  train( classe ~  stddev_roll_forearm +
+                  var_roll_belt + var_accel_dumbbell +
+                  avg_roll_dumbbell + min_roll_forearm,
+                  data=cleanTrainingDF, method="rf" )
+myRF
+```
+
+```{r echo=FALSE, fig.align='center', fig.height=5, fig.width=5 }
+
+# Caret featurePlot of our 5 variables
+#
+featurePlot(x=cleanTrainingDF[, c("stddev_pitch_belt", "var_roll_belt", "var_accel_dumbbell", "avg_roll_dumbbell", "min_roll_forearm") ], 
+            y=cleanTrainingDF$classe, plot="ellipse" )
+
+```
+
+
+Now let's compute our **estimated** Out-Of-Sample Accuracy for this model...
+
+```{r echo=FALSE}
+
+# Prediction 
+pred2 <- predict( myRF, newdata=cleanTestingDF )
+
+# nrow( cleanTestingDF )
+# length( pred2)
+
+# Mark our correct predictions
+cleanTestingDF$predictedRight2 <- pred2 == cleanTestingDF$classe
+#  testRpart <- predict(fitRpart, newdata = na.omit(dtest))
+
+#  Accuracy percentage 
+accuracyRate <- nrow( cleanTestingDF[ which( cleanTestingDF$predictedRight2 ==TRUE ), ] ) /
+  nrow( cleanTestingDF )
+#   0.2944
+
+#  Contingency table
+print( "Our resulting Contingency Table")
+table( pred2, cleanTestingDF$classe)
+
+print( paste( "Our estimated Out-Of-Sample Accuracy rate for RANDOM FOREST is -->   ",
+              round( accuracyRate, 4)  ) )
+
+
+```
+
+Now let's fit a Boosting Model and see if we do any better...
+
+```{r include=FALSE, echo=FALSE}
+
+#===================================================================
+#  Boosting
+# 
+#  Let's try the General Boosting Model 
+#
+
+
+myGBM <-  train( classe ~  stddev_roll_forearm +
+                   var_roll_belt + var_accel_dumbbell +
+                   avg_roll_dumbbell + min_roll_forearm,
+                 data=cleanTrainingDF, method="gbm" )
+
+# Prediction 
+pred3 <- predict( myGBM, newdata=cleanTestingDF )
+# 
+# nrow( cleanTestingDF )
+# length( pred3 )
+
+# Mark our correct predictions
+cleanTestingDF$predictedRight3 <- pred3 == cleanTestingDF$classe
+
+#  Accuracy percentage 
+accuracyRate <- nrow( cleanTestingDF[ which( cleanTestingDF$predictedRight3 ==TRUE ), ] ) /
+  nrow( cleanTestingDF )
+
+print( paste( "Our estimated Out-Of-Sample Accuracy rate for GBM BOOSTING is -->   ",
+              round( accuracyRate, 4)  ) )
+
+```
+
+```{r echo=FALSE}
+
+print( paste( "Our estimated Out-Of-Sample Accuracy rate for GBM BOOSTING is -->   ",
+              round( accuracyRate, 4)  ) )
+
+```
+
+Unfortunately, Boosting did worse than Random Forest...
+
+
+```{r  echo=FALSE, fig.align='center', fig.height=3, fig.width=4}
+
+qplot( pred2, pred3, colour=classe, data=cleanTestingDF )
+
+#  Now let's try a stacked model that combines the Random Forest and Boosting...
+
+# 
+# #=========================================  Stacking ================
+# #  Now determine the Stacked accuracy....
+# qplot( pred1, pred2, colour=diagnosis, data=testing)
+# #line( pred3)
+# 
+# # Combine the predictions
+# #
+# predDF <- data.frame( pred1, pred2, pred3, diagnosis=testing$diagnosis )
+# 
+# combModFit <- train( diagnosis ~ ., method="gam",  data=predDF )
+# 
+# combPred <- predict( combModFit, predDF)
+
+```
+
+##  Summary
+
+We can achieve a basic prediction level on this problem, but more data and research is needed.
+
+Let's get a **Baseline** by predicting "classe" **randomly** and checking the Accuracy...
+
+```{r echo=FALSE}
+
+#===================================================================
+#  Random sample
+# 
+#  Let's get a baseline with just randomly generated predictions.
+#
+
+myFactorVars <- c( "A", "B", "C", "D", "E" )
+sampleSize <- nrow(  cleanTestingDF )
+
+predRandom <- sample( myFactorVars, size=sampleSize, replace = TRUE )
+
+# Mark our correct predictions
+cleanTestingDF$predictedRightRandom<- predRandom == cleanTestingDF$classe
+
+#  Accuracy percentage 
+accuracyRate <- nrow( cleanTestingDF[ which( cleanTestingDF$predictedRightRandom ==TRUE ), ] ) /
+  nrow( cleanTestingDF )
+
+print( paste( "RANDOM SAMPLE - Out-Of-Sample Accuracy rate is -->   ",
+              round( accuracyRate, 4)  ) )
+```
+
+- The RANDOM sample is about equal to the GBM-Boosting model at ~ 20%.
+
+- We will use the **Random Forest Model for our exam predictions** because it has a better accuracy at ~ 29% 
+
+
+Here are the **predictions for the 20 questions** on the "pml-testing.csv" dataset -
+
+```{r finalSummary}
+
+#=========================================================================
+#  Predict on pml-testing dataset - 20 predictions of classes
+#
+#        Use the best model for Prediction 
+
+
+myPredictions <- predict( myRF, newdata=pml_testing )
+myPredictions
+
+
+```
+
+**Thank you** for reviewing our analysis! 
+
+Please see the R Markdown source code and supporting files at our Git Site ( [Here in GitHub]( https://github.com/mikepastor12/JohnsHopkins-CaseStudy-2022)  )
+
+
+**Michael Louis Pastor - 2022**
+
+
+
+
+
+
+>>>>>>> 1abaf687928c073c044958f2c04981f90d956b36
