@@ -175,7 +175,7 @@ print( "LASSO Model Created")
 ```
 
 
-Let's take the predictor variables with an Overall impact greater than 7.
+Let's take the predictor variables with an Overall impact (i.e. most variance explained) greater than 7.
 
 Here are our candidates in a constructed Model Formula string...  
 
@@ -281,12 +281,12 @@ myRF <-  train( classe ~  stddev_roll_forearm +
 myRF
 ```
 
-```{r echo=FALSE}
+```{r echo=FALSE, fig.align='center', fig.height=5, fig.width=5 }
 
 # Caret featurePlot of our 5 variables
 #
 featurePlot(x=cleanTrainingDF[, c("stddev_pitch_belt", "var_roll_belt", "var_accel_dumbbell", "avg_roll_dumbbell", "min_roll_forearm") ], 
-            y=cleanTrainingDF$classe, plot="pairs" )
+            y=cleanTrainingDF$classe, plot="ellipse" )
 
 ```
 
@@ -308,7 +308,11 @@ cleanTestingDF$predictedRight2 <- pred2 == cleanTestingDF$classe
 #  Accuracy percentage 
 accuracyRate <- nrow( cleanTestingDF[ which( cleanTestingDF$predictedRight2 ==TRUE ), ] ) /
   nrow( cleanTestingDF )
-#   [1] 0.8414634
+#   0.2944
+
+#  Contingency table
+print( "Our resulting Contingency Table")
+table( pred2, cleanTestingDF$classe)
 
 print( paste( "Our estimated Out-Of-Sample Accuracy rate for RANDOM FOREST is -->   ",
               round( accuracyRate, 4)  ) )
@@ -359,10 +363,12 @@ print( paste( "Our estimated Out-Of-Sample Accuracy rate for GBM BOOSTING is -->
 
 Unfortunately, Boosting did worse than Random Forest...
 
-Now let's try a stacked model that combines the Random Forest and Boosting...
 
-```{r  echo=FALSE}
+```{r  echo=FALSE, fig.align='center', fig.height=3, fig.width=4}
 
+qplot( pred2, pred3, colour=classe, data=cleanTestingDF )
+
+#  Now let's try a stacked model that combines the Random Forest and Boosting...
 
 # 
 # #=========================================  Stacking ================
@@ -410,11 +416,12 @@ print( paste( "RANDOM SAMPLE - Out-Of-Sample Accuracy rate is -->   ",
               round( accuracyRate, 4)  ) )
 ```
 
-The random sample is about equal to the GBM-Boosting model at ~ 20%.
+- The RANDOM sample is about equal to the GBM-Boosting model at ~ 20%.
 
-We will use the **Random Forest Model for our exam predictions** because it has a better accuracy at ~ 39% 
+- We will use the **Random Forest Model for our exam predictions** because it has a better accuracy at ~ 29% 
 
-Here our our predictions for the 20 questions on the pml-testing dataset -
+
+Here are the **predictions for the 20 questions** on the "pml-testing.csv" dataset -
 
 ```{r finalSummary}
 
