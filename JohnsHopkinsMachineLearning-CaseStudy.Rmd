@@ -27,10 +27,10 @@ library(ElemStatLearn)
 library(rpart)        # Recursive partition trees
 library(randomForest) # Random forest
 library(gbm)          # Boosting
+library(e1071)        # Support vector machine  
 
 set.seed( 123456 )    # Reproducibility
 
-#  library(emo)
 
 ```
 ##   Just how good was that workout?
@@ -51,7 +51,7 @@ Please see the **R Markdown source code** and supporting files at our Git Site (
 
 ##   Performance Metrics
 
-We will perform all of our performance measurements using a simple categorical Accuracy measurement ( predicted versus actual divided by total trials ).
+We will perform all of our performance measurements using a simple categorical Accuracy measurement ( Predicted correctly divided by Total trials ).
 
 We will use random subsampling for **Cross-Validation**. The pml-training dataset is partitioned ( createDataPartition ) into separate training and testing datasets (67/33) that we can use to **estimate** the "out-of-sample" error on models.
 
@@ -116,7 +116,7 @@ print( "*  Datasets have been loaded, cleaned and partitioned")
 ##   Our Dependent Response Variable
 
 
-Let's take a closer look at **"classe"** which is our Dependent / Response / Y variable that we will predict in our models.
+Let's take a closer look at **"classe"** which is our Dependent / Response / Y variable that we will predict in our models -
 
 - Categorical
 - Ordinal
@@ -134,7 +134,7 @@ plot( training$classe )
 
 ## Which Explanatory Predictor variables should we use?
 
-Let's take a closer look at our Independent/Explanatory/X variables by fitting a Regularized Regression **(LASSO)** model.  This will give us guidance on the most valuable predictor variables in the dataset. The trained LASSO Model can give us the fields/columns which explain most of the variance.
+Let's take a closer look at our Independent/Explanatory/X variables by fitting a Regularized Regression **(LASSO)** model.  This will give us guidance on the most valuable predictor variables in this large (160 columns) dataset. The trained LASSO Model can give us the fields/columns which explain most of the variance.
 
 First, we need some more data cleaning - *smiles* 
 - Twelve of the columns in the Training dataset contain division by zero errors - let's remove these clear errors from the datasets.
@@ -361,28 +361,58 @@ print( paste( "Our estimated Out-Of-Sample Accuracy rate for GBM BOOSTING is -->
 
 ```
 
-Unfortunately, Boosting did worse than Random Forest...
+Unfortunately, Boosting did significantly worse than Random Forest...
 
 
-```{r  echo=FALSE, fig.align='center', fig.height=3, fig.width=4}
+Now let's try a **Stacked Model** that combines the Random Forest and Boosting
 
-qplot( pred2, pred3, colour=classe, data=cleanTestingDF )
+- We use a Support Vector Machine SVM to combine the RF and GBM Predictions.
+- We then predict and measure the error in the same way as the other individual Models
 
-#  Now let's try a stacked model that combines the Random Forest and Boosting...
 
-# 
-# #=========================================  Stacking ================
+```{r  include=FALSE, echo=FALSE }
+
+# #=======================================================================
+#   Stacking 
+#
 # #  Now determine the Stacked accuracy....
-# qplot( pred1, pred2, colour=diagnosis, data=testing)
-# #line( pred3)
-# 
-# # Combine the predictions
-# #
-# predDF <- data.frame( pred1, pred2, pred3, diagnosis=testing$diagnosis )
-# 
-# combModFit <- train( diagnosis ~ ., method="gam",  data=predDF )
-# 
-# combPred <- predict( combModFit, predDF)
+
+# qplot( pred2, pred3, colour=classe, data=cleanTestingDF )
+
+#  #  Concatenate our predictions
+#
+metaModelDF <- data.frame( pred2, pred3, classe=cleanTestingDF$classe )
+
+# Fit a support vector machine  
+# library(e1071)
+mySVM = svm(formula = classe ~ .,
+            data = metaModelDF )
+
+
+# Now fetch predictions with the testing data with the base models
+testPred2 <- predict( myRF, cleanTestingDF)
+testPred3 <- predict( myGBM, cleanTestingDF)
+
+# another Meta data frame
+metaModelTestingDF <- data.frame( testPred2, testPred3, classe=cleanTestingDF$classe )
+
+# Now predict with the Stacked model
+predSTACKED <- predict( mySVM, metaModelTestingDF )
+
+# nrow( metaModelTestingDF )
+# length( predSTACKED )
+
+# Mark our correct predictions
+cleanTestingDF$predictedRightSTACKED <- predSTACKED == cleanTestingDF$classe
+
+#  Accuracy percentage 
+accuracyRate <- nrow( cleanTestingDF[ which( cleanTestingDF$predictedRightSTACKED ==TRUE ), ] ) /
+  nrow( cleanTestingDF )
+
+```
+```{r echo=FALSE}
+print( paste( "Our estimated Out-Of-Sample Accuracy rate for a STACKED Model (RF and GBM) is -->   ",
+              round( accuracyRate, 4)  ) )
 
 ```
 
@@ -412,13 +442,15 @@ cleanTestingDF$predictedRightRandom<- predRandom == cleanTestingDF$classe
 accuracyRate <- nrow( cleanTestingDF[ which( cleanTestingDF$predictedRightRandom ==TRUE ), ] ) /
   nrow( cleanTestingDF )
 
-print( paste( "RANDOM SAMPLE - Out-Of-Sample Accuracy rate is -->   ",
+print( paste( "SIMPLE Random Sample - Out-Of-Sample Accuracy rate is -->   ",
               round( accuracyRate, 4)  ) )
 ```
 
-- The RANDOM sample is about equal to the GBM-Boosting model at ~ 20%.
+- The SIMPLE Random Sample is about equal to the GBM-Boosting model at ~ 20%.
 
-- We will use the **Random Forest Model for our exam predictions** because it has a better accuracy at ~ 29% 
+- The STACKED Model is about equal to the RANDOM FOREST at ~ 29% but adds complexity
+
+- We will use the **Random Forest Model for our exam predictions** because it is straightforward and has a relatively good accuracy at ~ 29% 
 
 
 Here are the **predictions for the 20 questions** on the "pml-testing.csv" dataset -
@@ -443,6 +475,8 @@ Please see the R Markdown source code and supporting files at our Git Site ( [He
 
 
 **Michael Louis Pastor - 2022**
+
+
 
 
 
